@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Routing with OpenStreetMap</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+    />
+  </head>
+  <body>
+    <div
+      id="map"
+      style="width: 100%; height: 100vh"
+    ></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/examples/Control.Geocoder.js"></script>
+
+    <script>
+      const map = L.map('map').setView([29.6637098, -82.4177998], 8);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      fetch('data.json')
+        .then((response) => response.json())
+        .then((data) => {
+          const waypoints = data.map((item) => {
+            const [lat, lng] = item.location.split(',').map(Number);
+            return L.latLng(lat, lng);
+          });
+
+          L.Routing.control({
+            waypoints: waypoints,
+            routeWhileDragging: true,
+            createMarker: function (i, wp, nWps) {
+              return L.marker(wp.latLng).bindPopup(`Waypoint ${i + 1}: ${wp.latLng.toString()}`);
+            },
+            show: true,
+            addWaypoints: false,
+            lineOptions: {
+              styles: [{ color: 'blue', opacity: 0.6, weight: 5 }],
+            },
+            router: L.Routing.osrmv1({
+              serviceUrl: 'https://router.project-osrm.org/route/v1',
+            }),
+          }).addTo(map);
+        })
+        .catch((error) => {
+          console.error('Lỗi khi đọc file JSON:', error);
+        });
+    </script>
+  </body>
+</html>

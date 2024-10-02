@@ -12,7 +12,6 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
     />
-
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
@@ -29,26 +28,52 @@
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/examples/Control.Geocoder.js"></script>
 
     <script>
+      // Khởi tạo bản đồ tại vị trí mặc định
       const map = L.map('map').setView([29.6637098, -82.4177998], 8);
 
+      // Sử dụng OpenStreetMap tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
+      // Fetch dữ liệu từ API
       fetch('https://apimapbackend.onrender.com/api/users')
         .then((response) => response.json())
         .then((data) => {
+          // Map dữ liệu API để tạo các waypoint
           const waypoints = data.map((item) => {
             const [lat, lng] = item.location.split(',').map(Number);
             return L.latLng(lat, lng);
           });
 
-          L.Routing.control({
+          // Khởi tạo Routing control với các waypoint
+          const routingControl = L.Routing.control({
             waypoints: waypoints,
             routeWhileDragging: true,
             createMarker: function (i, wp, nWps) {
-              return L.marker(wp.latLng).bindPopup(`Waypoint ${i + 1}: ${wp.latLng.toString()}`);
+              const marker = L.marker(wp.latLng);
+
+              // Gắn sự kiện click vào từng marker để hiển thị thông tin chi tiết
+              marker.on('click', function () {
+                const detailInfo = data[i]; // Lấy thông tin chi tiết tương ứng với marker
+                const popupContent = `
+                  <div>
+                    <h2>Details</h2>
+                    <p><strong>Waypoint ${i + 1}</strong></p>
+                    <p>Name: ${detailInfo.name}</p>
+                    <p>Address: ${detailInfo.vicinity}</p>
+                    <p>Email: ${detailInfo.email}</p>
+                    <p>Phome: ${detailInfo.Phone}</p>
+                    <p>Website: <a href="${detailInfo.Website}" target="_blank">${detailInfo.Website}</a></p>
+                  </div>
+                `;
+
+                // Hiển thị popup với thông tin chi tiết
+                marker.bindPopup(popupContent).openPopup();
+              });
+
+              return marker;
             },
             show: true,
             addWaypoints: false,

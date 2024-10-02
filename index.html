@@ -7,7 +7,6 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
-
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
@@ -16,66 +15,43 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
     />
+    <style>
+      #map {
+        width: 100%;
+        height: 100vh;
+      }
+    </style>
   </head>
   <body>
-    <div
-      id="map"
-      style="width: 100%; height: 100vh"
-    ></div>
+    <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/examples/Control.Geocoder.js"></script>
 
     <script>
-      // Khởi tạo bản đồ tại vị trí mặc định
+      // Tạo bản đồ và thiết lập vị trí trung tâm ban đầu
       const map = L.map('map').setView([29.6637098, -82.4177998], 8);
 
-      // Sử dụng OpenStreetMap tile layer
+      // Tạo lớp bản đồ từ OpenStreetMap
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
-      // Fetch dữ liệu từ API
-      fetch('https://apimap-backend-gj1l.vercel.app/api/users')
+      // Lấy dữ liệu từ API
+      fetch('https://apimapbackend.onrender.com/api/users')
         .then((response) => response.json())
         .then((data) => {
-          // Map dữ liệu API để tạo các waypoint
+          // Tạo một mảng tọa độ từ dữ liệu API
           const waypoints = data.map((item) => {
             const [lat, lng] = item.location.split(',').map(Number);
             return L.latLng(lat, lng);
           });
 
-          // Khởi tạo Routing control với các waypoint
-          const routingControl = L.Routing.control({
+          // Hiển thị tuyến đường với các điểm waypoints
+          L.Routing.control({
             waypoints: waypoints,
             routeWhileDragging: true,
-            createMarker: function (i, wp, nWps) {
-              const marker = L.marker(wp.latLng);
-
-              // Gắn sự kiện click vào từng marker để hiển thị thông tin chi tiết
-              marker.on('click', function () {
-                const detailInfo = data[i]; // Lấy thông tin chi tiết tương ứng với marker
-                const popupContent = `
-                  <div>
-                    <h2>Details</h2>
-                    <p><strong>Waypoint ${i + 1}</strong></p>
-                    <p>Name: ${detailInfo.name}</p>
-                    <p>Address: ${detailInfo.vicinity}</p>
-                    <p>Email: ${detailInfo.email}</p>
-                    <p>Phome: ${detailInfo.Phone}</p>
-                    <p>Website: <a href="${detailInfo.Website}" target="_blank">${detailInfo.Website}</a></p>
-                  </div>
-                `;
-
-                // Hiển thị popup với thông tin chi tiết
-                marker.bindPopup(popupContent).openPopup();
-              });
-
-              return marker;
-            },
-            show: true,
             addWaypoints: false,
             lineOptions: {
               styles: [{ color: 'blue', opacity: 0.6, weight: 5 }],
@@ -84,9 +60,38 @@
               serviceUrl: 'https://router.project-osrm.org/route/v1',
             }),
           }).addTo(map);
+
+          // Tạo marker và hiển thị thông tin chi tiết khi click
+          data.forEach((item, index) => {
+            const [lat, lng] = item.location.split(',').map(Number);
+            const marker = L.marker([lat, lng]).addTo(map);
+
+            // Gắn sự kiện click vào marker
+            marker.on('click', function () {
+              const popupContent = `
+                <div>
+                  <h3>Details</h3>
+                  <p><strong>Waypoint ${index + 1}</strong></p>
+                  <p>Name: ${item.name}</p>
+                  <p>Địa chỉ: ${item.vicinity}</p>
+                  <p>Email: ${item.email}</p>
+                  <p>Phone: ${item.Phone}</p>
+                  <p>Website: <a href="${item.Website}" target="_blank">${item.Website}</a></p>
+                </div>
+              `;
+
+              // Kiểm tra xem marker có popup hay không, nếu có thì xóa
+              if (marker.getPopup()) {
+                marker.unbindPopup();
+              }
+
+              // Gán lại popup mới và mở popup
+              marker.bindPopup(popupContent).openPopup();
+            });
+          });
         })
         .catch((error) => {
-          console.error('Lỗi khi đọc file JSON:', error);
+          console.error('Lỗi khi đọc dữ liệu từ API:', error);
         });
     </script>
   </body>

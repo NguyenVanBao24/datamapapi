@@ -36,7 +36,7 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
-      fetch('https://map-api-one.vercel.app/data.json')
+      fetch('https://mapapi-mauve.vercel.app/data.json')
         .then((response) => response.json())
         .then((data) => {
           const waypoints = data.map((item) => {
